@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Terminal Emulator</title>
+  <style>
+    /* CRT Screen Look */
+    body {
+      background-color: black;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    #terminal {
+      width: 80%;
+      height: 80%;
+      background-color: #000;
+      border: 2px solid #00FF00;
+      color: #00FF00;
+      padding: 10px;
+      box-shadow: 0 0 20px #00FF00;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    /* Terminal text effects */
+    .output {
+      margin: 0;
+      color: #00FF00;
+    }
+
+    .error {
+      color: red;
+    }
+
+    .input-caret {
+      display: inline-block;
+      width: 10px;
+      background-color: #00FF00;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+
+      from,
+      to {
+        background-color: transparent;
+      }
+
+      50% {
+        background-color: #00FF00;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="terminal"></div>
+
+  <script>
+    const terminal = document.getElementById('terminal');
+
+    // Simulate standard output
+    function printOutput(text) {
+      const outputLine = document.createElement('p');
+      outputLine.className = 'output';
+      outputLine.textContent = text;
+      terminal.appendChild(outputLine);
+      terminal.scrollTop = terminal.scrollHeight;  // Auto scroll
+    }
+
+    // Simulate standard error
+    function printError(text) {
+      const errorLine = document.createElement('p');
+      errorLine.className = 'output error';
+      errorLine.textContent = text;
+      terminal.appendChild(errorLine);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    // Simulate input (with typing effect)
+    function simulateInput(text) {
+      return new Promise((resolve) => {
+        const inputLine = document.createElement('p');
+        terminal.appendChild(inputLine);
+
+        let i = 0;
+        function typeChar() {
+          if (i < text.length) {
+            inputLine.textContent += text.charAt(i);
+            i++;
+            setTimeout(typeChar, 100);  // Delay for typing effect
+          } else {
+            const caret = document.createElement('span');
+            caret.className = 'input-caret';
+            inputLine.appendChild(caret);
+            terminal.scrollTop = terminal.scrollHeight;
+            resolve();
+          }
+        }
+        typeChar();
+      });
+    }
+
+    // Example usage
+    async function runTerminal() {
+      await simulateInput('user@web-terminal:~$ ');
+      printOutput('Hello, welcome to the web terminal!');
+      await simulateInput('user@web-terminal:~$ ');
+      printError('Error: Command not found');
+      await simulateInput('user@web-terminal:~$ ');
+    }
+
+    runTerminal();
+  </script>
+</body>
+
+</html>

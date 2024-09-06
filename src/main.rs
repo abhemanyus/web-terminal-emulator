@@ -8,10 +8,13 @@ use std::{convert::Infallible, process::Stdio};
 use tokio::{net::TcpListener, process::Command};
 use tokio_stream::StreamExt as _;
 use tokio_util::io::ReaderStream;
+use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new().route("/run", get(run));
+    let app = Router::new()
+        .route("/run", get(run))
+        .nest_service("/", ServeDir::new("public"));
     let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
