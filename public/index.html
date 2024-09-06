@@ -15,6 +15,7 @@
       justify-content: center;
       align-items: center;
       font-family: 'Courier New', Courier, monospace;
+      overflow: hidden;
     }
 
     #terminal {
@@ -28,6 +29,7 @@
       overflow-y: auto;
       white-space: pre-wrap;
       line-height: 1.5;
+      position: relative;
     }
 
     /* Terminal text effects */
@@ -58,14 +60,63 @@
         background-color: #00FF00;
       }
     }
+
+    /* Invisible input for capturing user input */
+    #inputField {
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      z-index: -1;
+    }
   </style>
 </head>
 
 <body>
-  <div id="terminal"></div>
+  <div id="terminal" tabindex="0"></div>
+  <input type="text" id="inputField" autofocus>
 
   <script>
     const terminal = document.getElementById('terminal');
+    const inputField = document.getElementById('inputField');
+    let currentInput = '';
+
+    // Focus the input field when the terminal is clicked
+    terminal.addEventListener('click', () => {
+      inputField.focus();
+    });
+
+    // Handle user typing
+    inputField.addEventListener('input', (e) => {
+      currentInput = e.target.value;
+      updateInputDisplay(currentInput);
+    });
+
+    // Handle Enter key for input submission
+    inputField.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        printOutput(`user@web-terminal:~$ ${currentInput}`);
+        processCommand(currentInput);
+        currentInput = '';
+        inputField.value = '';
+        updateInputDisplay(currentInput);
+      }
+    });
+
+    // Display the current input on the terminal
+    function updateInputDisplay(text) {
+      let inputLine = document.querySelector('.input-line');
+      if (!inputLine) {
+        inputLine = document.createElement('p');
+        inputLine.className = 'input-line';
+        terminal.appendChild(inputLine);
+      }
+      inputLine.textContent = `user@web-terminal:~$ ${text}`;
+      const caret = document.createElement('span');
+      caret.className = 'input-caret';
+      inputLine.appendChild(caret);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
 
     // Simulate standard output
     function printOutput(text) {
@@ -73,7 +124,7 @@
       outputLine.className = 'output';
       outputLine.textContent = text;
       terminal.appendChild(outputLine);
-      terminal.scrollTop = terminal.scrollHeight;  // Auto scroll
+      terminal.scrollTop = terminal.scrollHeight;
     }
 
     // Simulate standard error
@@ -85,40 +136,36 @@
       terminal.scrollTop = terminal.scrollHeight;
     }
 
-    // Simulate input (with typing effect)
-    function simulateInput(text) {
-      return new Promise((resolve) => {
-        const inputLine = document.createElement('p');
-        terminal.appendChild(inputLine);
-
-        let i = 0;
-        function typeChar() {
-          if (i < text.length) {
-            inputLine.textContent += text.charAt(i);
-            i++;
-            setTimeout(typeChar, 100);  // Delay for typing effect
-          } else {
-            const caret = document.createElement('span');
-            caret.className = 'input-caret';
-            inputLine.appendChild(caret);
-            terminal.scrollTop = terminal.scrollHeight;
-            resolve();
-          }
-        }
-        typeChar();
-      });
+    // Process the entered command
+    function processCommand(command) {
+      if (command.trim() === 'help') {
+        printOutput('Available commands: help, clear');
+      } else if (command.trim() === 'clear') {
+        terminal.innerHTML = '';
+      } else {
+        const eventSource = new EventSource("/run?command=" + encodeURIComponent(command))
+        eventSource.addEventListener("stdout", (event) => {
+          printOutput(JSON.parse(event.data));
+        });
+        eventSource.addEventListener("stderr", (event) => {
+          printError(JSON.parse(event.data));
+        })
+        eventSource.onerror = (event) => {
+          eventSource.close();
+        };
+      }
     }
 
-    // Example usage
-    async function runTerminal() {
-      await simulateInput('user@web-terminal:~$ ');
-      printOutput('Hello, welcome to the web terminal!');
-      await simulateInput('user@web-terminal:~$ ');
-      printError('Error: Command not found');
-      await simulateInput('user@web-terminal:~$ ');
+    // Set initial focus on the input field
+    inputField.focus();
+
+    // Initialize the terminal with a welcome message
+    function initTerminal() {
+      printOutput('Welcome to the web terminal emulator!');
+      updateInputDisplay('');
     }
 
-    runTerminal();
+    initTerminal();
   </script>
 </body>
 
