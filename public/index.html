@@ -143,16 +143,7 @@
       } else if (command.trim() === 'clear') {
         terminal.innerHTML = '';
       } else {
-        const eventSource = new EventSource("/run?command=" + encodeURIComponent(command))
-        eventSource.addEventListener("stdout", (event) => {
-          printOutput(JSON.parse(event.data));
-        });
-        eventSource.addEventListener("stderr", (event) => {
-          printError(JSON.parse(event.data));
-        })
-        eventSource.onerror = (event) => {
-          eventSource.close();
-        };
+        fetch("/run", {method: "POST", body: command}).then(console.log).catch(console.error);
       }
     }
 
@@ -161,6 +152,16 @@
 
     // Initialize the terminal with a welcome message
     function initTerminal() {
+      const eventSource = new EventSource("/listen")
+      eventSource.addEventListener("stdout", (event) => {
+        printOutput(JSON.parse(event.data));
+      });
+      eventSource.addEventListener("stderr", (event) => {
+        printError(JSON.parse(event.data));
+      })
+      eventSource.onerror = (event) => {
+        eventSource.close();
+      };
       printOutput('Welcome to the web terminal emulator!');
       updateInputDisplay('');
     }

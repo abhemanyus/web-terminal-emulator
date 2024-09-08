@@ -8,6 +8,6 @@ axum = { version = "0.7.5", features = ["tokio"] }
 futures-util = "0.3.30"
 serde = { version = "1.0.209", features = ["derive"] }
 tokio = { version = "1.39.3", features = ["full", "sync"] }
-tokio-stream = "0.1.15"
+tokio-stream = { version = "0.1.16", features = ["sync"] }
 tokio-util = { version = "0.7.11", features = ["io"] }
 tower-http = { version = "0.5.2", features = ["fs"] }
